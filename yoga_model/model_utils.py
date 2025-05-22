@@ -62,7 +62,7 @@ val_acc_per_fold,val_loss_per_fold,loss_per_fold,acc_per_fold=d.training_model(t
 print(f'> Mean_Training_Accuracy: {np.mean(acc_per_fold)*100} (+- {np.std(acc_per_fold)})')
 print(f'> Mean_Validation_Accuracy: {np.mean(val_acc_per_fold)*100} (+- {np.std(val_acc_per_fold)})')
 
-
+print("hello")
 
 
 val_acc_per_fold,val_loss_per_fold,loss_per_fold,acc_per_fold=d.training_model(train_images_data, train_images_label, model, kfold, dataAugmentation)
