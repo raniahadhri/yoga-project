@@ -1,18 +1,5 @@
-# Ignore virtual environment
-venv/
 
-# Ignore data files
-data/
 
-# Ignore Jupyter checkpoints
-.ipynb_checkpoints/
-
-# Ignore system files
-.DS_Store
-
-# Ignore Python cache
-__pycache__/
-*.pyc
 
 # .gitignore
 *.zip
@@ -20,5 +7,11 @@ __pycache__/
 *.pkl
 *.jpg
 *.png
+*.pyc
+
+venv/
 data/
 model/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
