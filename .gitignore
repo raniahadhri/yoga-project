@@ -13,3 +13,12 @@ data/
 # Ignore Python cache
 __pycache__/
 *.pyc
+
+# .gitignore
+*.zip
+*.h5
+*.pkl
+*.jpg
+*.png
+data/
+model/
