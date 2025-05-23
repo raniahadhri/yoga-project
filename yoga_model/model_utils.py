@@ -1,72 +1,136 @@
- # Functions for building, training, saving model
+ # Functions for loading/preprocessing data
 
+import os
+import cv2
+import numpy as np
+from sklearn import preprocessing
 import tensorflow.keras.layers as tfl
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import KFold
 import numpy as np
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import data_utils as d
 import warnings
-import os
 warnings.filterwarnings("ignore")
 
-#unzip the dataset file 
-#!kaggle datasets download -d niharika41298/yoga-poses-dataset
+def preprocess_images(dataset_path):
+    images_data = []
+    images_label = []
+    class_names = os.listdir(dataset_path)
+    for class_name in class_names:
+        images_path = dataset_path + '/' + class_name
+        images = os.listdir(images_path)
+        for image in images:
+            bgr_img = cv2.imread(images_path + '/' + image)
+            # dsize
+            dsize = (64,64)
+            #resize image
+            resized_image = cv2.resize(bgr_img,dsize)
+            # convert from BGR color-space to YCrCb
+            ycrcb_img = cv2.cvtColor(resized_image, cv2.COLOR_BGR2YCrCb)
+            # create a CLAHE object
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            # Now apply CLAHE object on the YCrCb image
+            ycrcb_img[:, :, 0] = clahe.apply(ycrcb_img[:, :, 0])
+            # convert back to BGR color-space from YCrCb
+            equalized_img = cv2.cvtColor(ycrcb_img, cv2.COLOR_YCrCb2BGR)
+            # Denoise is done to remove unwanted noise to better perform
+            equalized_denoised_image = cv2.fastNlMeansDenoisingColored(equalized_img, None, 10, 10, 7, 21)
 
-path ="C:/Users/hadhr/Documents/yoga-project/data"
-train_path = path + "/DATASET/TRAIN"
-test_path = path + "/DATASET/TEST"
+            images_data.append(equalized_denoised_image/255)
+            images_label.append(class_name)
+    images_data = np.array(images_data)
+    images_label = np.array(images_label)
+    return images_data, images_label
 
-train_images_data, train_images_label = d.preprocess_images(train_path)
+def encoding_targets(labels):
+    le = preprocessing.LabelEncoder()
+    images_label = le.fit_transform(labels)
+    return images_label
 
-class_names = os.listdir(train_path)
-class_num = len(class_names)
-train_images_label = d.encoding_targets(train_images_label)
-print("classes" , class_names)
-
-
-
-model = tf.keras.Sequential([
-        tfl.Conv2D(filters=16, kernel_size=(3,3), activation='relu',input_shape=(64,64,3)),
-        tfl.MaxPool2D(pool_size=(2,2)),
-        tfl.Conv2D(filters=32, kernel_size=(3,3), activation='relu'),
+def build_model(input_shape=(64, 64, 3), class_num=10):
+    model = tf.keras.Sequential([
+        tfl.Conv2D(filters=16, kernel_size=(3, 3), activation='relu', input_shape=input_shape),
+        tfl.MaxPool2D(pool_size=(2, 2)),
+        tfl.Conv2D(filters=32, kernel_size=(3, 3), activation='relu'),
         tfl.BatchNormalization(axis=-1),
         tfl.Dropout(rate=0.25),
 
-        tfl.Conv2D(filters=64, kernel_size=(3,3), activation='relu'),
-        tfl.MaxPool2D(pool_size=(2,2)),
+        tfl.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+        tfl.MaxPool2D(pool_size=(2, 2)),
         tfl.BatchNormalization(axis=-1),
         tfl.Dropout(rate=0.25),
 
         tfl.Flatten(),
-        tfl.Dense(512,activation='relu'),
+        tfl.Dense(512, activation='relu'),
         tfl.BatchNormalization(),
         tfl.Dropout(rate=0.5),
         tfl.Dense(class_num, activation='softmax')
-])
+    ])
 
-model.compile(
-	optimizer = 'adam',
-	loss = 'sparse_categorical_crossentropy',
-	metrics = ['accuracy']
-)
+    model.compile(
+        optimizer='adam',
+        loss='sparse_categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    return model
+
+def dataAugmentation():
+    dataAugmentation = ImageDataGenerator(rotation_range = 10, zoom_range = 0.30,
+                                            fill_mode = "nearest", shear_range = 0.30)
+    return dataAugmentation
+
+def training_model_1(train_images_data, train_images_label, model, kfold):
+    # Define per-fold score containers
+    val_acc_per_fold = []
+    val_loss_per_fold = []
+    loss_per_fold = []
+    acc_per_fold = []
+
+    # K-fold Cross Validation model evaluation
+    fold_no = 1
+    for train, valid in kfold.split(train_images_data, train_images_label):
+
+        # Generate a print
+        print('------------------------------------------------------------------------')
+        print(f'Training for fold {fold_no} ...')
+        history = model.fit(
+            train_images_data[train], train_images_label[train], batch_size=16,
+            epochs=20, validation_data=(train_images_data[valid], train_images_label[valid])
+            )
+        val_acc_per_fold.append(history.history['val_accuracy'])
+        acc_per_fold.append(history.history['accuracy'])
+        val_loss_per_fold.append(history.history['val_loss'])
+        loss_per_fold.append(history.history['loss'])
+        # Increase fold number
+        fold_no += 1
+    return val_acc_per_fold,val_loss_per_fold,loss_per_fold,acc_per_fold,model
 
 
-# Define the K-fold Cross Validator
-kfold = KFold(n_splits=5, shuffle=True,random_state=2)
+def training_model_2(train_images_data, train_images_label, model, kfold,dataAugmentation):
+    # Define per-fold score containers
+    val_acc_per_fold = []
+    val_loss_per_fold = []
+    loss_per_fold = []
+    acc_per_fold = []
 
-val_acc_per_fold,val_loss_per_fold,loss_per_fold,acc_per_fold=d.training_model(train_images_data, train_images_label, model, kfold, dataAugmentation)
+    # K-fold Cross Validation model evaluation
+    fold_no = 1
+    for train, valid in kfold.split(train_images_data, train_images_label):
+        # Generate a print
+        print('------------------------------------------------------------------------')
+        print(f'Training for fold {fold_no} ...')
+        history = model.fit(
+            dataAugmentation.flow(train_images_data[train], train_images_label[train], batch_size=16),
+            epochs=20,
+            validation_data=(train_images_data[valid], train_images_label[valid])
+        )
+        val_acc_per_fold.append(history.history['val_accuracy'])
+        acc_per_fold.append(history.history['accuracy'])
+        val_loss_per_fold.append(history.history['val_loss'])
+        loss_per_fold.append(history.history['loss'])
+        # Increase fold number
+        fold_no += 1
+    return val_acc_per_fold,val_loss_per_fold,loss_per_fold,acc_per_fold,model
 
 
-print(f'> Mean_Training_Accuracy: {np.mean(acc_per_fold)*100} (+- {np.std(acc_per_fold)})')
-print(f'> Mean_Validation_Accuracy: {np.mean(val_acc_per_fold)*100} (+- {np.std(val_acc_per_fold)})')
-
-print("hello")
-
-
-val_acc_per_fold,val_loss_per_fold,loss_per_fold,acc_per_fold=d.training_model(train_images_data, train_images_label, model, kfold, dataAugmentation)
-
-
-print(f'> Mean_Training_Accuracy: {np.mean(acc_per_fold)*100} (+- {np.std(acc_per_fold)})')
-print(f'> Mean_Validation_Accuracy: {np.mean(val_acc_per_fold)*100} (+- {np.std(val_acc_per_fold)})')
