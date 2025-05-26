@@ -1,5 +1,5 @@
 # Yoga Pose Classifier & Feedback System
-
+![Alt text describing the image](images/yoga_cover_photo.png)
 ## Overview
 
 This project is a real-time yoga pose classification and feedback system built using a Convolutional Neural Network (CNN) and MediaPipe pose estimation. It captures video from a webcam, classifies the yoga pose performed, and provides actionable feedback to help users improve their posture.
