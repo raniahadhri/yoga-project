@@ -1,0 +1,4 @@
+pose,angle_name,angle_mean,angle_std
+downdog,Shoulder-Hip-Ankle,54.51464652826123,12.75454164294862
+downdog,Hip-Knee-Ankle,176.33086843914242,2.628547300928985
+downdog,Wrist-Elbow-Shoulder,167.64176003091347,6.569395232986601

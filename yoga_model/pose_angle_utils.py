@@ -110,7 +110,7 @@ def compute_pose_angles_from_image(image_path, angle_definitions, landmark_list)
         # Return empty dicts if no pose detected
         return {}, {}
     
-    
+
 def process_pose_images_in_folder(folder_path, angle_definitions, landmark_list):
     all_data = []
 
@@ -133,3 +133,28 @@ def process_pose_images_in_folder(folder_path, angle_definitions, landmark_list)
     df = pd.DataFrame(all_data)
     return df
 
+
+def save_calculated_angles_in_csv(pose, csv_path, df_angles, angle_names):
+    """
+    Saves the mean and std deviation of selected angles for a pose to a CSV.
+
+    Parameters:
+    - pose (str): Name of the pose 
+    - csv_path (str): Full path to the CSV file to save
+    - df_angles (pd.DataFrame): DataFrame containing the angle values
+    - angle_names (list of str): List of angle column names to process
+    """
+
+    mean_angles = df_angles[angle_names].mean()
+    std_angles = df_angles[angle_names].std()
+
+    rows = [
+        {"pose": pose, "angle_name": angle, "angle_mean": mean, "angle_std": std}
+        for (angle, mean), (_, std) in zip(mean_angles.items(), std_angles.items())
+    ]
+
+    summary_df = pd.DataFrame(rows)
+    summary_df.to_csv(csv_path, index=False)
+
+    print(f"✅ CSV saved to: {csv_path}")
+    return summary_df

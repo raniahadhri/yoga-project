@@ -5,8 +5,6 @@
 *.zip
 *.h5
 *.pkl
-*.jpg
-*.png
 *.pyc
 
 venv/
