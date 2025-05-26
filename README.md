@@ -16,11 +16,8 @@ This project is a real-time yoga pose classification and feedback system built u
 ---
 
 ## Getting Started
-training before data augmentation: > Mean_Training_Accuracy: 96.41019541025162 (+- 0.07331372659598148)
-                                   > Mean_Validation_Accuracy: 87.74739709496498 (+- 0.21045783995540077)
 
-training after data augmentation: > Mean_Training_Accuracy: 89.86851811408997 (+- 0.057962341237419196)
-                                  > Mean_Validation_Accuracy: 96.29015186429024 (+- 0.08872793585126595)
+
 ### Prerequisites
 
 - Python 3.7+
@@ -32,4 +29,3 @@ training after data augmentation: > Mean_Training_Accuracy: 89.86851811408997 (+
 Install dependencies with:
 
 ```bash
-pip install tensorflow mediapipe opencv-python numpy
